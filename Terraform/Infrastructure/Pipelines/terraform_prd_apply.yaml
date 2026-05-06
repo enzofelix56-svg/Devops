@@ -1,0 +1,58 @@
+resources:
+  pipelines:
+    - pipeline: planPipeline
+      source: Terraform-Plan
+
+trigger:
+  branches:
+    include:
+      - main
+
+variables:
+  terraformWorkingDirectory: '$(System.DefaultWorkingDirectory)/Infrastructure'
+  azureServiceConnection: 'Deploy_Devops'
+  azureSubscriptionId: 'cdd479cb-ae7d-4efc-9756-e53554edcb00'
+
+stages:
+- stage: Apply
+  jobs:
+  - deployment: Apply
+    environment: terraform-infrastructure-prd
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+
+          - task: TerraformInstaller@1
+            inputs:
+              terraformVersion: 'latest'
+
+          - task: TerraformTask@5
+            displayName: 'Terraform init'
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: '$(terraformWorkingDirectory)'
+              backendServiceArm: '$(azureServiceConnection)'
+              backendAzureRmResourceGroupName: 'rg-dev-aks-001'
+              backendAzureRmStorageAccountName: 'tfstatedevopsproject'
+              backendAzureRmContainerName: 'tfstate'
+              backendAzureRmKey: 'dev.terraform.tfstate'
+
+          - download: planPipeline
+            artifact: terraform-plan
+
+          - script: |
+              cp $(Pipeline.Workspace)/planPipeline/terraform-plan/tfplan $(terraformWorkingDirectory)
+
+          - task: TerraformTask@5
+            displayName: 'Terraform Apply'
+            inputs:
+              provider: 'azurerm'
+              command: 'apply'
+              environmentServiceNameAzureRM: '$(azureServiceConnection)'
+              workingDirectory: '$(terraformWorkingDirectory)'
+              commandOptions: 'tfplan'
+
+          
