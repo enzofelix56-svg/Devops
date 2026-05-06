@@ -39,11 +39,5 @@ module "virtual_network" {
   nsg-Id               = module.network_security_group.id
 }
 
-module "virtual_network_teste" {
-  source               = "./modules/virtualnetwork"
-  virtual_network_name = "aks-dev-vnet-test"
-  resource_group_name  = module.resource_group.name
-  location             = var.location
-  nsg-Id               = module.network_security_group.id
-}
+
 
