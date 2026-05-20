@@ -9,7 +9,7 @@ variables:
 - group: azure_service_connection
 
 - name: terraformWorkingDirectory
-  value: '$(System.DefaultWorkingDirectory)/Infrastructure'
+  value: 'Devops/Infrastructure'
 
 stages:
   - stage: TerraformPrepare
