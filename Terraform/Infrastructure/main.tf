@@ -1,12 +1,3 @@
-#terraform {
-# backend "azurerm" {
-#  resource_group_name  = "rg-dev-aks-001"
-# storage_account_name = "tfstatedevopsproject"
-#container_name       = "tfstate"
-#key                  = "dev.terraform.tfstate"
-#}
-#}
-
 terraform {
   backend "azurerm" {}
 }
@@ -48,11 +39,14 @@ module "virtual_network" {
   nsg-Id               = module.network_security_group.id
 }
 
-module "virtual_network_teste" {
-  source               = "./modules/virtualnetwork"
-  virtual_network_name = "aks-dev-vnet-test"
-  resource_group_name  = module.resource_group.name
-  location             = var.location
-  nsg-Id               = module.network_security_group.id
-}
 
+module "kubernetes-dev" {
+  source = "./modules/kubernets"
+  cluster_name = var.cluster_name
+  location = var.location
+  resource_group_name = module.resource_group.name
+  dns_prefix = var.dns_prefix
+  node_count = var.node_count
+  node_size = var.node_size
+  subnet_id = module.virtual_network.subnet_id
+}

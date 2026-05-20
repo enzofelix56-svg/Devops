@@ -15,14 +15,6 @@ variable "dns_prefix" {
   type = string
 }
 
-variable "node_count" {
-  type    = number
-  default = 1
-}
-
-variable "vm_size" {
-  type    = string
-}
 
 variable "tags" {
   type    = map(string)
@@ -30,4 +22,12 @@ variable "tags" {
 }
 variable subnet_id {
   type = string
+}
+
+variable "node_count" {
+  type = number
+}
+
+variable "node_size" {
+    type = string
 }
