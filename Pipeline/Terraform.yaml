@@ -13,6 +13,7 @@ variables:
 - name: terraformWorkingDirectory
   value: '$(System.DefaultWorkingDirectory)/Terraform/Infrastructure'
 
+
 stages:
   - stage: TerraformPrepare
     displayName: 'Terraform — Init e validate'
