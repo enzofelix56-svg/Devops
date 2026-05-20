@@ -40,4 +40,13 @@ module "virtual_network" {
 }
 
 
-
+module "kubernetes-dev" {
+  source = "./modules/kubernets"
+  cluster_name = var.cluster_name
+  location = var.location
+  resource_group_name = module.resource_group.name
+  dns_prefix = var.dns_prefix
+  node_count = var.node_count
+  node_size = var.node_size
+  subnet_id = module.virtual_network.subnet_id
+}
