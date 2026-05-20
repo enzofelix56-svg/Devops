@@ -1,15 +1,18 @@
-trigger:  
+trigger:
   branches:
     include:
       - none
 
 variables:
 - group: tfstate_infos
-
 - group: azure_service_connection
 
+- name: terraformVersion
+  value: '1.11.4'
+
 - name: terraformWorkingDirectory
-  value: 'Devops/Infrastructure'
+  value: '$(System.DefaultWorkingDirectory)/Terraform/Infrastructure'
+
 
 stages:
   - stage: TerraformPrepare
@@ -26,7 +29,15 @@ stages:
           - task: TerraformInstaller@1
             displayName: 'Instalar Terraform'
             inputs:
-              terraformVersion: 'latest'
+              terraformVersion: $(terraformVersion)
+
+          - bash: |
+              set -euo pipefail
+              echo "PATH=$PATH"
+              command -v terraform
+              ls -la "$(dirname "$(command -v terraform)")"
+              terraform version
+            displayName: 'Verificar instalação do Terraform'
 
           - task: TerraformTask@5
             displayName: 'Terraform init'
@@ -46,7 +57,6 @@ stages:
               provider: 'azurerm'
               command: 'validate'
               workingDirectory: '$(terraformWorkingDirectory)'
-              environmentServiceNameAzureRM: '$(azureServiceConnection)'
 
           - task: TerraformTask@5
             displayName: 'Terraform plan'
