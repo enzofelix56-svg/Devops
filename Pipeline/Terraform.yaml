@@ -1,0 +1,127 @@
+trigger:
+  branches:
+    include:
+      - Main
+
+variables:
+- group: tfstate_infos
+- group: azure_service_connection
+
+- name: terraformVersion
+  value: '1.11.4'
+
+- name: terraformWorkingDirectory
+  value: '$(System.DefaultWorkingDirectory)/Terraform/Infrastructure'
+
+# Crie este Environment no Azure DevOps e adicione "Approvals and checks".
+# Project Settings → Pipelines → Environments → New → Approvals
+- name: terraformEnvironment
+  value: 'terraform-approval'
+
+stages:
+  - stage: Plan
+    displayName: 'Terraform — Plan'
+    jobs:
+      - job: Plan
+        displayName: 'Plan'
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - checkout: self
+            displayName: 'Checkout'
+
+          - task: TerraformInstaller@1
+            displayName: 'Instalar Terraform'
+            inputs:
+              terraformVersion: $(terraformVersion)
+
+          - bash: |
+              set -euo pipefail
+              command -v terraform
+              terraform version
+            displayName: 'Verificar instalação do Terraform'
+
+          - task: TerraformTask@5
+            displayName: 'Terraform init'
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: '$(terraformWorkingDirectory)'
+              backendServiceArm: '$(azureServiceConnection)'
+              backendAzureRmResourceGroupName: '$(backendAzureRmResourceGroupName)'
+              backendAzureRmStorageAccountName: '$(backendAzureRmStorageAccountName)'
+              backendAzureRmContainerName: '$(backendAzureRmContainerName)'
+              backendAzureRmKey: '$(backendAzureRmKey)'
+
+          - task: TerraformTask@5
+            displayName: 'Terraform validate'
+            inputs:
+              provider: 'azurerm'
+              command: 'validate'
+              workingDirectory: '$(terraformWorkingDirectory)'
+
+          - task: TerraformTask@5
+            name: terraformPlan
+            displayName: 'Terraform plan'
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              workingDirectory: '$(terraformWorkingDirectory)'
+              commandOptions: '-var-file=dev.tfvars -input=false -detailed-exitcode -out=tfplan'
+              environmentServiceNameAzureRM: '$(azureServiceConnection)'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publicar plano (tfplan)'
+            inputs:
+              targetPath: '$(terraformWorkingDirectory)/tfplan'
+              artifact: 'tfplan'
+              publishLocation: 'pipeline'
+
+  - stage: Apply
+    displayName: 'Terraform — Apply'
+    dependsOn: Plan
+    condition: succeeded()
+    jobs:
+      - deployment: Apply
+        displayName: 'Apply'
+        pool:
+          vmImage: ubuntu-latest
+        environment: $(terraformEnvironment)
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  displayName: 'Checkout'
+
+                - task: DownloadPipelineArtifact@2
+                  displayName: 'Baixar plano aprovado'
+                  inputs:
+                    artifact: 'tfplan'
+                    path: '$(terraformWorkingDirectory)'
+
+                - task: TerraformInstaller@1
+                  displayName: 'Instalar Terraform'
+                  inputs:
+                    terraformVersion: $(terraformVersion)
+
+                - task: TerraformTask@5
+                  displayName: 'Terraform init'
+                  inputs:
+                    provider: 'azurerm'
+                    command: 'init'
+                    workingDirectory: '$(terraformWorkingDirectory)'
+                    backendServiceArm: '$(azureServiceConnection)'
+                    backendAzureRmResourceGroupName: '$(backendAzureRmResourceGroupName)'
+                    backendAzureRmStorageAccountName: '$(backendAzureRmStorageAccountName)'
+                    backendAzureRmContainerName: '$(backendAzureRmContainerName)'
+                    backendAzureRmKey: '$(backendAzureRmKey)'
+
+                - task: TerraformTask@5
+                  displayName: 'Terraform apply'
+                  inputs:
+                    provider: 'azurerm'
+                    command: 'apply'
+                    workingDirectory: '$(terraformWorkingDirectory)'
+                    commandOptions: '-input=false tfplan'
+                    environmentServiceNameAzureRM: '$(azureServiceConnection)'
