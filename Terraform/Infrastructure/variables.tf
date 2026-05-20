@@ -43,3 +43,33 @@ variable "storage_account_kind" {
 variable "storage_account_access_tier" {
   type = string
 }
+
+#kubernetes variables
+variable "cluster_name" {
+  description = "Nome do cluster"
+  type        = string
+}
+
+variable "location" {
+  type = string
+}
+
+variable "resource_group_name" {
+  type = string
+}
+
+variable "dns_prefix" {
+  type = string
+}
+
+variable "node_count" {
+  type = number
+}
+
+variable "subnet_id" {
+  type = string
+}
+
+variable "node_size" {
+    type = string
+}
