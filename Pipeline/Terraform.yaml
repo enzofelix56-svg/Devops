@@ -1,0 +1,51 @@
+trigger:  
+  branches:
+    include:
+      - none
+
+variables:
+  terraformWorkingDirectory: '$(System.DefaultWorkingDirectory)/Infrastructure'
+  azureServiceConnection: 'Deploy_Devops'
+
+stages:
+  - stage: TerraformPrepare
+    displayName: 'Terraform — Init e validate'
+    jobs:
+      - job: Prepare
+        displayName: 'Prepare'
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - checkout: self
+            displayName: 'Checkout'
+
+          - task: TerraformInstaller@1
+            displayName: 'Instalar Terraform'
+            inputs:
+              terraformVersion: 'latest'
+
+          - task: TerraformTask@5
+            displayName: 'Terraform init'
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: '$(terraformWorkingDirectory)'
+              backendServiceArm: '$(azureServiceConnection)'
+              commandOptions: '-backend-config=".\tfstateInfo\backend.hcl"'
+
+          - task: TerraformTask@5
+            displayName: 'Terraform validate'
+            inputs:
+              provider: 'azurerm'
+              command: 'validate'
+              workingDirectory: '$(terraformWorkingDirectory)'
+              environmentServiceNameAzureRM: '$(azureServiceConnection)'
+
+          - task: TerraformTask@5
+            displayName: 'Terraform plan'
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              workingDirectory: '$(terraformWorkingDirectory)'
+              commandOptions: '-var-file=dev.tfvars -input=false -detailed-exitcode -out=tfplan'
+              environmentServiceNameAzureRM: '$(azureServiceConnection)'
