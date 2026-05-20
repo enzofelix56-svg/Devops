@@ -31,6 +31,10 @@ stages:
               command: 'init'
               workingDirectory: '$(terraformWorkingDirectory)'
               backendServiceArm: '$(azureServiceConnection)'
+              backendAzureRmResourceGroupName: 'rg-dev-aks-001'
+              backendAzureRmStorageAccountName: 'tfstatedevopsproject'
+              backendAzureRmContainerName: 'tfstate'
+              backendAzureRmKey: 'dev.terraform.tfstate'
               commandOptions: '-backend-config=".\tfstateInfo\backend.hcl"'
 
           - task: TerraformTask@5
