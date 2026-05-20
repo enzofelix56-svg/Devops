@@ -4,8 +4,12 @@ trigger:
       - none
 
 variables:
-  terraformWorkingDirectory: '$(System.DefaultWorkingDirectory)/Infrastructure'
-  azureServiceConnection: 'Deploy_Devops'
+- group: tfstate_infos
+
+- group: azure_service_connection
+
+- name: terraformWorkingDirectory
+  value: '$(System.DefaultWorkingDirectory)/Infrastructure'
 
 stages:
   - stage: TerraformPrepare
@@ -31,11 +35,10 @@ stages:
               command: 'init'
               workingDirectory: '$(terraformWorkingDirectory)'
               backendServiceArm: '$(azureServiceConnection)'
-              backendAzureRmResourceGroupName: 'rg-dev-aks-001'
-              backendAzureRmStorageAccountName: 'tfstatedevopsproject'
-              backendAzureRmContainerName: 'tfstate'
-              backendAzureRmKey: 'dev.terraform.tfstate'
-              commandOptions: '-backend-config=".\tfstateInfo\backend.hcl"'
+              backendAzureRmResourceGroupName: '$(backendAzureRmResourceGroupName)'
+              backendAzureRmStorageAccountName: '$(backendAzureRmStorageAccountName)'
+              backendAzureRmContainerName: '$(backendAzureRmContainerName)'
+              backendAzureRmKey: '$(backendAzureRmKey)'
 
           - task: TerraformTask@5
             displayName: 'Terraform validate'
